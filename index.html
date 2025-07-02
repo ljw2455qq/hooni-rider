@@ -68,8 +68,17 @@
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [126.8540, 35.1291],
-      zoom: 17
+      zoom: 17,
+      scrollZoom: true,
+      doubleClickZoom: true,
+      dragPan: true,
+      touchZoomRotate: true,
+      boxZoom: true,
+      keyboard: true,
+      dragRotate: true
     });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
     let totalDistance = 0;
     let prevLat = null, prevLng = null;
