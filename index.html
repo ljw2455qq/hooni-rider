@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>구도 오버레이</title>
+  <title>GPS 오버레이</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <style>
@@ -21,6 +21,7 @@
       border-radius: 10px;
       overflow: hidden;
       box-shadow: 0 0 10px #000;
+      z-index: 1;
     }
     .info-box {
       position: absolute;
@@ -30,6 +31,7 @@
       padding: 10px;
       border-radius: 8px;
       font-size: 14px;
+      z-index: 2;
     }
     .logo-bar {
       position: absolute;
@@ -37,6 +39,7 @@
       right: 10px;
       display: flex;
       gap: 6px;
+      z-index: 2;
     }
     .logo-bar img {
       height: 24px;
@@ -55,12 +58,12 @@
   <div class="logo-bar">
     <img src="https://img.icons8.com/color/48/twitch--v1.png" alt="Twitch" />
     <img src="https://img.icons8.com/color/48/youtube-play.png" alt="YouTube" />
-    <img src="https://img.icons8.com/fluency/48/soop.png" alt="SOOP" />
+    <img src="https://img.icons8.com/fluency/48/globe.png" alt="SOOP" />
     <img src="https://img.icons8.com/color/48/cheese.png" alt="Chzzk" />
   </div>
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <script>
-    mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw';
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -97,7 +100,7 @@
     function updateInfo() {
       const km = totalDistance.toFixed(2);
       const earn = Math.floor(totalDistance * payPerKm);
-      document.getElementById('info').innerHTML = `주행 거리: ${km}km<br>수익: ${earn.toLocaleString()}\u20a9`;
+      document.getElementById('info').innerHTML = `이동 거리: ${km}km<br>수익: ${earn.toLocaleString()}원`;
     }
 
     if (navigator.geolocation) {
@@ -123,7 +126,7 @@
         timeout: 10000
       });
     } else {
-      document.getElementById('info').textContent = 'GPS 도움을 받을 수 없습니다';
+      document.getElementById('info').textContent = 'GPS를 지원하지 않습니다';
     }
   </script>
 </body>
