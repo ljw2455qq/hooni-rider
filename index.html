@@ -1,142 +1,132 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <title>GPS 오버레이</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <title>hooni 스타일 GPS 오버레이</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     html, body {
       margin: 0;
+      padding: 0;
       background: transparent;
       font-family: sans-serif;
-      color: white;
+      overflow: hidden;
     }
     #map {
-      width: 300px;
-      height: 200px;
       position: absolute;
-      bottom: 40px;
-      right: 10px;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 0 10px #000;
-      z-index: 1;
+      top: 0; left: 0;
+      width: 100%;
+      height: 300px;
+      z-index: 0;
     }
-    .info-box {
+    .overlay-info {
       position: absolute;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.6);
+      bottom: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
       padding: 10px;
-      border-radius: 8px;
       font-size: 14px;
-      z-index: 2;
-    }
-    .logo-bar {
-      position: absolute;
-      top: 10px;
-      right: 10px;
+      z-index: 1;
       display: flex;
-      gap: 6px;
-      z-index: 2;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
     }
-    .logo-bar img {
-      height: 24px;
+    .overlay-info img.logo {
+      height: 20px;
+      vertical-align: middle;
     }
-    .mapboxgl-marker img {
-      width: 40px !important;
-      height: 40px !important;
+    .marker-img {
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       border: 2px solid white;
+      box-shadow: 0 0 5px #000;
     }
   </style>
 </head>
 <body>
-  <div id="map"></div>
-  <div class="info-box" id="info">GPS 대기 중...</div>
-  <div class="logo-bar">
-    <img src="https://img.icons8.com/color/48/twitch--v1.png" alt="Twitch" />
-    <img src="https://img.icons8.com/color/48/youtube-play.png" alt="YouTube" />
-    <img src="https://img.icons8.com/fluency/48/globe.png" alt="SOOP" />
-    <img src="https://img.icons8.com/color/48/cheese.png" alt="Chzzk" />
-  </div>
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw';
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [126.8540, 35.1291],
-      zoom: 17,
-      scrollZoom: true,
-      doubleClickZoom: true,
-      dragPan: true,
-      touchZoomRotate: true,
-      boxZoom: true,
-      keyboard: true,
-      dragRotate: true
-    });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+<div id="map"></div>
+<div class="overlay-info">
+  <span id="distance">주행 거리: 0.00km</span>
+  <span id="earnings">수익: 0원</span>
+  <span id="likes">❤️ 0</span>
+  <img class="logo" src="https://yourcdn.com/chzzk.png" />
+  <img class="logo" src="https://yourcdn.com/soop.png" />
+  <img class="logo" src="https://yourcdn.com/twitch.svg" />
+  <img class="logo" src="https://yourcdn.com/youtube.svg" />
+</div>
 
-    let totalDistance = 0;
-    let prevLat = null, prevLng = null;
-    const payPerKm = 800;
-    const el = document.createElement('div');
-    const img = document.createElement('img');
-    img.src = 'profile.png';
-    img.style.width = '40px';
-    img.style.height = '40px';
-    img.style.borderRadius = '50%';
-    img.style.border = '2px solid white';
-    el.appendChild(img);
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw'; // 사용자의 토큰으로 교체
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [126.8540, 35.1291],
+    zoom: 17,
+    interactive: false
+  });
 
-    const marker = new mapboxgl.Marker(el).setLngLat([126.8540, 35.1291]).addTo(map);
+  const el = document.createElement('img');
+  el.src = 'https://ljw2455qq.github.io/rider-324/profile.png';
+  el.className = 'marker-img';
+  const marker = new mapboxgl.Marker(el).setLngLat([126.8540, 35.1291]).addTo(map);
 
-    function deg2rad(d) {
-      return d * (Math.PI / 180);
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5hMmN9QFgdFtaA5gicS_pj-blu_jJdvE",
+    authDomain: "rider-bf48b.firebaseapp.com",
+    databaseURL: "https://rider-bf48b-default-rtdb.firebaseio.com",
+    projectId: "rider-bf48b",
+    storageBucket: "rider-bf48b.appspot.com",
+    messagingSenderId: "1026929653322",
+    appId: "1:1026929653322:web:b90541cccba5b4186198b3"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let prev = null;
+  let total = 0;
+
+  function deg2rad(d) { return d * (Math.PI / 180); }
+  function getDistance(a, b) {
+    const R = 6371;
+    const dLat = deg2rad(b.lat - a.lat);
+    const dLon = deg2rad(b.lng - a.lng);
+    const c = Math.sin(dLat / 2) ** 2 +
+              Math.cos(deg2rad(a.lat)) * Math.cos(deg2rad(b.lat)) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+  }
+
+  db.ref('location').on('value', snap => {
+    const val = snap.val();
+    if (!val) return;
+    const { lat, lng } = val;
+    marker.setLngLat([lng, lat]);
+    map.setCenter([lng, lat]);
+
+    if (prev) {
+      const dist = getDistance(prev, { lat, lng });
+      if (dist < 1) total += dist;
+      document.getElementById('distance').innerText = `주행 거리: ${total.toFixed(2)}km`;
+      document.getElementById('earnings').innerText = `수익: ${(total * 4000).toLocaleString()}원`;
     }
+    prev = { lat, lng };
+  });
 
-    function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = deg2rad(lat2 - lat1);
-      const dLon = deg2rad(lon2 - lon1);
-      const a = Math.sin(dLat/2)**2 + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  db.ref('stats/heart').on('value', snap => {
+    const h = snap.val();
+    if (h !== null) {
+      document.getElementById('likes').innerText = `❤️ ${h}`;
     }
-
-    function updateInfo() {
-      const km = totalDistance.toFixed(2);
-      const earn = Math.floor(totalDistance * payPerKm);
-      document.getElementById('info').innerHTML = `이동 거리: ${km}km<br>수익: ${earn.toLocaleString()}원`;
-    }
-
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(pos => {
-        const lat = pos.coords.latitude, lng = pos.coords.longitude;
-        marker.setLngLat([lng, lat]);
-        map.setCenter([lng, lat]);
-
-        if (prevLat !== null && prevLng !== null) {
-          const d = getDistance(prevLat, prevLng, lat, lng);
-          if (d < 1) totalDistance += d;
-        }
-
-        prevLat = lat;
-        prevLng = lng;
-        updateInfo();
-
-      }, err => {
-        document.getElementById('info').textContent = 'GPS 오류: ' + err.message;
-      }, {
-        enableHighAccuracy: true,
-        maximumAge: 2000,
-        timeout: 10000
-      });
-    } else {
-      document.getElementById('info').textContent = 'GPS를 지원하지 않습니다';
-    }
-  </script>
+  });
+</script>
 </body>
 </html>
