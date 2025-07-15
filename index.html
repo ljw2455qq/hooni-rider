@@ -1,480 +1,134 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="utf-8" />
-    <title>hooni 스타일 GPS 오버레이</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-    <!-- Mapbox GL Language Plugin for Korean -->
-    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-language/v1.1.0/mapbox-gl-language.js"></script>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            background: transparent !important; /* 전체 배경 투명 */
-            font-family: 'Inter', sans-serif; /* 폰트 설정 */
-            overflow: hidden;
-        }
-        #map {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: calc(100% - 40px); /* 오버레이 높이만큼 제외 */
-            z-index: 1; /* 오버레이보다 아래 */
-        }
-        /* Mapbox GL JS 기본 UI 숨기기 */
-        .mapboxgl-control-container {
-            display: none !important;
-        }
-
-        /* NEW: 하단 오버레이 컨테이너 - 작게 압축 */
-        #bottom-overlay {
-            position: absolute;
-            bottom: 0; /* 화면 하단에 고정 */
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.7); /* 반투명 검정 배경 */
-            color: white;
-            padding: 5px 15px; /* 패딩을 줄여 높이 압축 */
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000; /* 지도보다 위에 */
-            border-top-left-radius: 8px; /* 모서리 둥글게 */
-            border-top-right-radius: 8px;
-            font-size: 0.9em; /* 전체 폰트 크기 줄임 */
-            height: 40px; /* 고정 높이로 더 압축 */
-        }
-
-        .overlay-section {
-            flex: 1;
-            text-align: center;
-            padding: 0 5px; /* 내부 패딩도 줄임 */
-            white-space: nowrap; /* 내용이 줄바꿈되지 않도록 */
-            display: flex; /* 내부 요소 정렬을 위해 flex 사용 */
-            align-items: center; /* 세로 중앙 정렬 */
-            justify-content: center; /* 가로 중앙 정렬 */
-            gap: 5px; /* 요소들 사이 간격 */
-        }
-
-        /* 각 섹션의 텍스트와 아이콘 크기 조정 */
-        .overlay-section span, .overlay-section i, .overlay-section svg {
-            font-size: 1em; /* 기본 폰트 크기 유지 (부모가 줄었으므로 상대적으로 작아짐) */
-            line-height: 1; /* 줄 높이 조정 */
-        }
-        .overlay-section i {
-            color: #61dafb; /* 강조색 */
-        }
-
-        /* 스트리밍 로고 섹션 */
-        #stream-logos-section {
-            flex: 1.5; /* 로고 섹션에 더 많은 공간 할당 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px; /* 로고 사이 간격 줄임 */
-        }
-        #stream-logos-section .fab, #stream-logos-section .fas {
-            font-size: 1.5em; /* 로고 아이콘 크기 조정 */
-            color: #fff;
-            text-shadow: 0 0 3px rgba(97, 218, 251, 0.7);
-        }
-        /* 특정 플랫폼 색상 */
-        .fa-twitch { color: #9146FF; }
-        .fa-youtube { color: #FF0000; }
-
-        /* 커스텀 SVG 로고 스타일 */
-        .custom-logo-svg {
-            width: 1.5em; /* Font Awesome 아이콘과 동일한 크기 */
-            height: 1.5em;
-            vertical-align: middle;
-            filter: drop-shadow(0 0 3px rgba(97, 218, 251, 0.7));
-        }
-        .chzzik-logo-color { fill: #00FF00; } /* 치지직 초록색 */
-        .soop-logo-color { fill: #5231F0; } /* SOOP 보라색 */
-
-        /* Mapbox 마커 이미지 스타일 */
-        .marker-img {
-            width: 24px; /* 프로필 사진 크기 */
-            height: 24px;
-            border-radius: 50%;
-            border: 3px solid #007bff; /* 파란색 테두리 */
-            box-shadow: 0 0 8px rgba(0, 123, 255, 0.8); /* 빛나는 효과 */
-        }
-
-        /* Mapbox 스타일 선택 드롭다운 */
-        #style-selector {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1001;
-            padding: 5px;
-            border-radius: 5px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: 1px solid #61dafb;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>hooni 스타일 GPS 오버레이</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #map {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 300px;
+      z-index: 0;
+    }
+    .overlay-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 10px;
+      font-size: 14px;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .overlay-info img.logo {
+      height: 20px;
+      vertical-align: middle;
+    }
+    .marker-img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 0 5px #000;
+    }
+  </style>
 </head>
 <body>
 
 <div id="map"></div>
-<!-- Mapbox 스타일 선택 드롭다운 -->
-<select id="style-selector">
-    <option value="mapbox://styles/mapbox/streets-v11">Streets v11</option>
-    <option value="mapbox://styles/mapbox/outdoors-v11">Outdoors v11</option>
-    <option value="mapbox://styles/mapbox/dark-v10">Dark v10</option>
-    <option value="mapbox://styles/mapbox/light-v10">Light v10</option>
-    <option value="mapbox://styles/mapbox/satellite-streets-v9">Satellite Streets v9</option>
-    <option value="mapbox://styles/mapbox/traffic-day-v2">Traffic Day v2</option>
-    <option value="mapbox://styles/mapbox/traffic-night-v2">Traffic Night v2</option>
-</select>
-
-<!-- 기존 정보 박스 (상단 좌측에 위치) -->
-<div class="info-box" id="info">지도 초기화 중...</div>
-
-<!-- 하단 오버레이 컨테이너 -->
-<div id="bottom-overlay">
-    <div class="overlay-section" id="stats-section">
-        <i class="fas fa-route"></i> <span id="driving-distance">0.00</span> km
-        <i class="fas fa-coins" style="margin-left: 10px;"></i> 일수익: <span id="daily-earnings">0</span> 원
-        <i class="fas fa-calendar-alt" style="margin-left: 10px;"></i> 월수익: <span id="monthly-earnings">0</span> 원
-    </div>
-    <div class="overlay-section" id="stream-logos-section">
-        <i class="fab fa-twitch" title="트위치"></i>
-        <!-- 치지직 로고 (간단한 SVG) -->
-        <svg class="custom-logo-svg" viewBox="0 0 100 100" title="치지직">
-            <polygon class="chzzik-logo-color" points="20,10 80,50 20,90 20,10"></polygon>
-        </svg>
-        <i class="fab fa-youtube" title="유튜브"></i>
-        <!-- SOOP 로고 (간단한 SVG - 별 모양) -->
-        <svg class="custom-logo-svg" viewBox="0 0 100 100" title="SOOP">
-            <polygon class="soop-logo-color" points="50,10 61,35 89,35 66,54 77,79 50,65 23,79 34,54 11,35 39,35"></polygon>
-        </svg>
-    </div>
-    <div class="overlay-section" id="misc-info">
-        <i class="fas fa-thermometer-half"></i> <span id="current-weather">N/A</span>°C
-        <i class="fas fa-clock" style="margin-left: 10px;"></i> <span id="current-time">N/A</span>
-        <i class="fas fa-signal" style="margin-left: 10px;" title="웹 브라우저에서는 휴대폰 신호 세기를 직접 가져올 수 없습니다."></i>
-        <i class="fas fa-battery-full" style="margin-left: 10px;" title="웹 브라우저에서는 휴대폰 배터리 잔량을 직접 가져올 수 없습니다."></i>
-    </div>
+<div class="overlay-info">
+  <span id="distance">주행 거리: 0.00km</span>
+  <span id="earnings">수익: 0원</span>
+  <span id="likes">❤️ 0</span>
+  <img class="logo" src="https://yourcdn.com/chzzk.png" />
+  <img class="logo" src="https://yourcdn.com/soop.png" />
+  <img class="logo" src="https://yourcdn.com/twitch.svg" />
+  <img class="logo" src="https://yourcdn.com/youtube.svg" />
 </div>
 
 <script>
-    // Mapbox Access Token
-    mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw';
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw'; // 사용자의 토큰으로 교체
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v12',
+  center: [126.8540, 35.1291],
+  zoom: 17,
+  interactive: true  // ← 변경됨
+});
 
-    // Firebase 구성 정보
-    const firebaseConfig = {
-        apiKey: "AIzaSyA5hMmN9QFgdFtaA5gicS_pj-blu_jJdvE",
-        authDomain: "rider-bf48b.firebaseapp.com",
-        databaseURL: "https://rider-bf48b-default-rtdb.firebaseio.com",
-        projectId: "rider-bf48b",
-        storageBucket: "rider-bf48b.appspot.com",
-        messagingSenderId: "1026929653322",
-        appId: "1:1026929653322:web:b90541cccba5b4186198b3"
-    };
+map.addControl(new mapboxgl.NavigationControl());  // 확대/축소 버튼 추가
 
-    // OpenWeatherMap API 키를 여기에 입력하세요. (필수!)
-    const OPENWEATHERMAP_API_KEY = "3a4a39b054762e36581605681026ed35"; 
-    const PAY_PER_KM = 800; // 킬로미터당 수익 (원)
+  const el = document.createElement('img');
+  el.src = 'https://ljw2455qq.github.io/rider-324/profile.png';
+  el.className = 'marker-img';
+  const marker = new mapboxgl.Marker(el).setLngLat([126.8540, 35.1291]).addTo(map);
 
-    // DOM 요소 캐싱
-    const infoDiv = document.getElementById('info');
-    const drivingDistanceSpan = document.getElementById('driving-distance');
-    const dailyEarningsSpan = document.getElementById('daily-earnings');
-    const monthlyEarningsSpan = document.getElementById('monthly-earnings');
-    const currentWeatherSpan = document.getElementById('current-weather');
-    const currentTimeSpan = document.getElementById('current-time');
-    const styleSelector = document.getElementById('style-selector');
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5hMmN9QFgdFtaA5gicS_pj-blu_jJdvE",
+    authDomain: "rider-bf48b.firebaseapp.com",
+    databaseURL: "https://rider-bf48b-default-rtdb.firebaseio.com",
+    projectId: "rider-bf48b",
+    storageBucket: "rider-bf48b.appspot.com",
+    messagingSenderId: "1026929653322",
+    appId: "1:1026929653322:web:b90541cccba5b4186198b3"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    // 정보 박스 업데이트 함수 (전역적으로 접근 가능하도록 상단에 정의)
-    function updateInfo(message) {
-        infoDiv.innerHTML = message;
-        console.log("Info Update:", message);
+  let prev = null;
+  let total = 0;
+
+  function deg2rad(d) { return d * (Math.PI / 180); }
+  function getDistance(a, b) {
+    const R = 6371;
+    const dLat = deg2rad(b.lat - a.lat);
+    const dLon = deg2rad(b.lng - a.lng);
+    const c = Math.sin(dLat / 2) ** 2 +
+              Math.cos(deg2rad(a.lat)) * Math.cos(deg2rad(b.lat)) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+  }
+
+  db.ref('location').on('value', snap => {
+    const val = snap.val();
+    if (!val) return;
+    const { lat, lng } = val;
+    marker.setLngLat([lng, lat]);
+    map.setCenter([lng, lat]);
+
+    if (prev) {
+      const dist = getDistance(prev, { lat, lng });
+      if (dist < 1) total += dist;
+      document.getElementById('distance').innerText = `주행 거리: ${total.toFixed(2)}km`;
+      document.getElementById('earnings').innerText = `수익: ${(total * 900).toLocaleString()}원`;
     }
+    prev = { lat, lng };
+  });
 
-    // 날씨 및 GPS 데이터를 저장할 전역 변수
-    let currentTemperature = "N/A";
-    let weatherDescription = "날씨 정보 없음";
-    let lastKnownLat = 36.47840; // 기본값: 세종시 (GPS 데이터 없을 때 초기값)
-    let lastKnownLng = 127.28836; // 기본값: 세종시
-    let lastGpsUpdateTimestamp = "N/A";
-
-    // 수익 및 거리 관련 변수 (Firebase에 저장될 값)
-    let totalDistance = 0; // 총 주행 거리 (km)
-    let dailyEarnings = 0;
-    let monthlyEarnings = 0;
-    let lastUpdateDate = ""; // 마지막 업데이트 날짜 (YYYY-MM-DD)
-    let lastUpdateMonth = ""; // 마지막 업데이트 월 (YYYY-MM)
-    let lastUpdateYear = ""; // 마지막 업데이트 연도 (YYYY)
-
-    // Firebase Realtime Database 인스턴스
-    let database;
-    let userMarker = null; // Mapbox GL JS 마커 변수
-
-    // 정보 박스 및 하단 오버레이 내용을 업데이트하는 함수
-    function updateDisplay() {
-        let gpsInfo = "위치 데이터 대기 중...";
-        if (userMarker) {
-            const currentLngLat = userMarker.getLngLat();
-            gpsInfo = `위치: ${currentLngLat.lat.toFixed(6)}, ${currentLngLat.lng.toFixed(6)}`;
-        }
-
-        infoDiv.innerHTML = `
-            ${gpsInfo}<br>
-            마지막 GPS 업데이트: ${lastGpsUpdateTimestamp}
-        `;
-
-        drivingDistanceSpan.textContent = totalDistance.toFixed(2);
-        dailyEarningsSpan.textContent = dailyEarnings.toLocaleString();
-        monthlyEarningsSpan.textContent = monthlyEarnings.toLocaleString();
-        currentWeatherSpan.textContent = `${currentTemperature}°C (${weatherDescription})`;
-        
-        console.log("전체 디스플레이 업데이트 완료.");
+  db.ref('stats/heart').on('value', snap => {
+    const h = snap.val();
+    if (h !== null) {
+      document.getElementById('likes').innerText = `❤️ ${h}`;
     }
-
-    // 현재 시간을 업데이트하는 함수
-    function updateCurrentTime() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        currentTimeSpan.textContent = timeString;
-    }
-
-    // 날씨 데이터를 가져오는 함수
-    async function fetchWeatherData() {
-        if (OPENWEATHERMAP_API_KEY === "YOUR_OPENWEATHERMAP_API_KEY" || !OPENWEATHERMAP_API_KEY) {
-            console.warn("OpenWeatherMap API 키가 설정되지 않았습니다. 날씨 데이터를 가져올 수 없습니다.");
-            currentTemperature = "API 키 필요";
-            weatherDescription = "설정 필요";
-            updateDisplay();
-            return;
-        }
-
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lastKnownLat}&lon=${lastKnownLng}&appid=${OPENWEATHERMAP_API_KEY}&units=metric&lang=kr`;
-        console.log("날씨 데이터 가져오는 중:", url);
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP 오류! 상태: ${response.status}`);
-            }
-            const data = await response.json();
-            currentTemperature = data.main.temp.toFixed(1); // 소수점 첫째 자리까지
-            weatherDescription = data.weather[0].description; // 날씨 설명
-            console.log("날씨 데이터 성공적으로 가져옴:", data);
-        } catch (error) {
-            console.error("날씨 데이터 가져오기 실패:", error);
-            currentTemperature = "오류";
-            weatherDescription = "로드 오류";
-        } finally {
-            updateDisplay(); // 날씨 가져오기 시도 후 항상 정보 박스 업데이트
-        }
-    }
-
-    // Firebase에 수익 데이터 저장
-    function saveEarningsToFirebase() {
-        if (!database) {
-            console.warn("Firebase database not initialized. Cannot save earnings.");
-            return;
-        }
-        const today = new Date();
-        const currentDate = today.toISOString().slice(0, 10); // YYYY-MM-DD
-        const currentMonth = today.toISOString().slice(0, 7); // YYYY-MM
-        const currentYear = today.getFullYear().toString(); // YYYY
-
-        database.ref('earnings/user1').set({
-            totalDistance: totalDistance,
-            dailyEarnings: dailyEarnings,
-            monthlyEarnings: monthlyEarnings,
-            lastUpdateDate: currentDate,
-            lastUpdateMonth: currentMonth,
-            lastUpdateYear: currentYear,
-            timestamp: Date.now()
-        }).then(() => {
-            console.log("수익 데이터 Firebase에 저장 성공.");
-        }).catch(error => {
-            console.error("수익 데이터 Firebase 저장 실패:", error);
-        });
-    }
-
-    // Firebase에서 수익 데이터 로드 및 초기화 로직
-    function loadEarningsFromFirebase() {
-        if (!database) {
-            console.warn("Firebase database not initialized. Cannot load earnings.");
-            return;
-        }
-        database.ref('earnings/user1').once('value', (snapshot) => {
-            const data = snapshot.val();
-            const today = new Date();
-            const currentDate = today.toISOString().slice(0, 10);
-            const currentMonth = today.toISOString().slice(0, 7);
-            const currentYear = today.getFullYear().toString();
-
-            if (data) {
-                totalDistance = data.totalDistance || 0;
-                dailyEarnings = data.dailyEarnings || 0;
-                monthlyEarnings = data.monthlyEarnings || 0;
-                lastUpdateDate = data.lastUpdateDate || "";
-                lastUpdateMonth = data.lastUpdateMonth || "";
-                lastUpdateYear = data.lastUpdateYear || "";
-
-                // 날짜가 바뀌면 일수익 초기화
-                if (lastUpdateDate !== currentDate) {
-                    console.log("새로운 날짜! 일수익 및 주행거리 초기화.");
-                    dailyEarnings = 0;
-                    totalDistance = 0; // 새 날에는 거리도 초기화
-                }
-                // 월이 바뀌면 월수익 초기화
-                if (lastUpdateMonth !== currentMonth) {
-                    console.log("새로운 월! 월수익 초기화.");
-                    monthlyEarnings = 0;
-                }
-                // 연도가 바뀌면 연수익 초기화 (연수익 변수 제거로 이 줄은 필요 없음)
-                // if (lastUpdateYear !== currentYear) {
-                //     console.log("새로운 연도! 연수익 초기화.");
-                // }
-                console.log("수익 데이터 Firebase에서 로드 및 초기화 완료:", {totalDistance, dailyEarnings, monthlyEarnings});
-            } else {
-                console.log("Firebase에 수익 데이터 없음. 초기값 사용.");
-            }
-            updateDisplay(); // 로드 후 디스플레이 업데이트
-        }).catch(error => {
-            console.error("수익 데이터 Firebase 로드 실패:", error);
-            updateDisplay(); // 실패해도 디스플레이는 업데이트
-        });
-    }
-
-    // 두 지점 간의 거리 계산 (하버사인 공식)
-    function deg2rad(d) { return d * (Math.PI / 180); }
-    function getDistance(a, b) {
-        const R = 6371; // 지구 반지름 (km)
-        const dLat = deg2rad(b.lat - a.lat);
-        const dLon = deg2rad(b.lng - a.lng);
-        const c = Math.sin(dLat / 2) ** 2 +
-                  Math.cos(deg2rad(a.lat)) * Math.cos(deg2rad(b.lat)) *
-                  Math.sin(dLon / 2) ** 2;
-        return R * 2 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
-    }
-
-    updateInfo("스크립트 로드 시작...");
-
-    try {
-        // Firebase 초기화
-        const app = firebase.initializeApp(firebaseConfig);
-        database = firebase.database(); // 전역 변수에 할당
-        console.log("Firebase 앱 초기화 성공.");
-        updateInfo("Firebase 앱 초기화 성공. 지도 및 데이터 로드 중...");
-
-        // 수익 데이터 로드
-        loadEarningsFromFirebase();
-
-        // Mapbox GL JS 지도 초기화
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11', // 기본 스타일 설정
-            center: [lastKnownLng, lastKnownLat], // 초기 중심 좌표
-            zoom: 16,
-            interactive: false // 사용자 상호작용 비활성화 (오버레이용)
-        });
-        console.log("Mapbox GL JS 지도 초기화 성공.");
-        updateInfo("지도 초기화 성공. 타일 로드 중...");
-
-        // Mapbox GL Language Plugin 적용 (한글 번역)
-        const language = new MapboxLanguage({ defaultLanguage: 'ko' });
-        map.addControl(language);
-        console.log("Mapbox GL Language plugin applied.");
-
-        // 마커 요소 생성 (profile.png)
-        const el = document.createElement('img');
-        el.src = 'profile.png'; // GitHub Pages의 profile.png 경로
-        el.className = 'marker-img';
-
-        // 마커 생성 및 지도에 추가
-        userMarker = new mapboxgl.Marker(el)
-            .setLngLat([lastKnownLng, lastKnownLat])
-            .addTo(map);
-        console.log("사용자 마커 설정 완료.");
-
-        let prevLat = null;
-        let prevLng = null;
-
-        // Firebase Realtime Database에서 'location' 경로의 위치 데이터 실시간 읽기
-        database.ref('location').on('value', (snapshot) => {
-            const data = snapshot.val();
-            console.log("Firebase 데이터 수신:", data);
-
-            if (data && data.lat !== undefined && data.lng !== undefined) {
-                const lat = data.lat;
-                const lng = data.lng;
-                lastGpsUpdateTimestamp = new Date(data.timestamp).toLocaleString();
-
-                // 날씨 업데이트를 위해 마지막으로 알려진 GPS 좌표 업데이트
-                lastKnownLat = lat;
-                lastKnownLng = lng;
-
-                userMarker.setLngLat([lng, lat]); // 마커 위치 업데이트
-                map.setCenter([lng, lat]); // 지도의 중심을 마커 위치로 이동 (마커가 항상 중앙에 보이도록)
-                console.log("마커 위치 및 지도 중심 업데이트:", lat, lng);
-                
-                // 거리 및 수익 계산
-                if (prevLat !== null && prevLng !== null) {
-                    const distanceMoved = getDistance({ lat: prevLat, lng: prevLng }, { lat, lng });
-                    // 너무 작은 움직임은 무시 (GPS 오차 방지)
-                    if (distanceMoved > 0.005) { // 5미터 이상 움직였을 때만 계산
-                        totalDistance += distanceMoved;
-                        const earningsGained = distanceMoved * PAY_PER_KM;
-                        dailyEarnings += earningsGained;
-                        monthlyEarnings += earningsGained;
-                        saveEarningsToFirebase(); // 변경사항 Firebase에 저장
-                    }
-                }
-                prevLat = lat;
-                prevLng = lng;
-
-                updateDisplay(); // GPS 데이터 업데이트 후 전체 디스플레이 업데이트
-            } else {
-                updateInfo("위치 데이터 형식이 올바르지 않거나 데이터가 없습니다.<br>휴대폰에서 전송 시작 확인!");
-                console.warn("유효한 위치 데이터를 Firebase에서 수신하지 못했거나 데이터 형식이 올바르지 않습니다.");
-                // Mapbox GL JS는 마커를 직접 제거할 필요 없이 위치만 업데이트하면 됨
-            }
-        }, (error) => {
-            updateInfo(`Firebase 데이터 읽기 오류: ${error.message}<br>콘솔 확인 필수!`);
-            console.error("Firebase 데이터 읽기 실패:", error);
-        });
-
-        // Mapbox 스타일 변경 이벤트 리스너
-        styleSelector.addEventListener('change', (event) => {
-            map.setStyle(event.target.value);
-            console.log("Map style changed to:", event.target.value);
-            // 스타일 변경 후 언어 플러그인을 다시 적용해야 합니다.
-            map.once('style.load', () => {
-                language.set;// 언어 플러그인 다시 적용
-            });
-        });
-
-
-        // 초기 날씨 데이터 가져오기 및 주기적 업데이트
-        fetchWeatherData();
-        setInterval(fetchWeatherData, 300000); // 5분(300,000ms)마다 날씨 데이터 가져오기
-
-        // 현재 시간 주기적 업데이트
-        updateCurrentTime();
-        setInterval(updateCurrentTime, 1000); // 1초마다 시간 업데이트
-
-    } catch (initError) {
-        updateInfo("애플리케이션 초기화 오류: " + initError.message + "<br>콘솔 확인 필수!");
-        console.error("애플리케이션 초기화 실패:", initError);
-    }
+  });
 </script>
 </body>
 </html>
