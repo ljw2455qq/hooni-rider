@@ -118,7 +118,7 @@ map.addControl(new mapboxgl.NavigationControl());  // 확대/축소 버튼 추�
       const dist = getDistance(prev, { lat, lng });
       if (dist < 1) total += dist;
       document.getElementById('distance').innerText = `주행 거리: ${total.toFixed(2)}km`;
-      document.getElementById('earnings').innerText = `수익: ${(total * 4000).toLocaleString()}원`;
+      document.getElementById('earnings').innerText = `수익: ${(total * 900).toLocaleString()}원`;
     }
     prev = { lat, lng };
   });
