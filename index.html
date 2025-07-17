@@ -17,12 +17,31 @@
       font-family: sans-serif;
       overflow: hidden;
     }
-map = new mapboxgl.Map({
+<!-- 기존 코드 유지하고 아래만 반영하면 됩니다 -->
+<style>
+  #map {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    width: 250px;
+    height: 250px;
+    border: 2px solid white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+</style>
+// mapboxgl.Map 초기화 부분 수정
+const map = new mapboxgl.Map({
   container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v11',
-  center: [127.0276, 37.4979],
-  zoom: 15,
-  pixelRatio: window.devicePixelRatio > 1 ? 2 : 1  // 고해상도 디스플레이 대응
+  style: 'mapbox://styles/mapbox/streets-v12',
+  center: [126.8540, 35.1291],
+  zoom: 17,
+  interactive: false,  // 오버레이용이므로 조작 비활성화
+  pixelRatio: 2        // 고해상도 렌더링 강제
+});
+
 });
     .overlay-info {
       position: absolute;
