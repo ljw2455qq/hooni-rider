@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -17,27 +16,40 @@
       font-family: sans-serif;
       overflow: hidden;
     }
-    #map {
+
+    /* 1. 새로운 컨테이너 스타일 추가 */
+    /* 이 컨테이너가 전체 위젯의 위치와 너비를 제어합니다. */
+    .map-container {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 300px;
-      z-index: 0;
-    }
-    .overlay-info {
-      position: absolute;
-      bottom: 0;
+      top: 0;
       left: 0;
+      width: 600px; /* ★★★★★ 여기에서 가로 너비를 조절하세요! ★★★★★ */
+      /* 원한다면 테두리나 그림자 효과를 추가할 수 있습니다. */
+      /* box-shadow: 0 0 10px rgba(0,0,0,0.5); */
+    }
+
+    /* 2. 지도(#map) 스타일 수정 */
+    #map {
+      /* position, top, left, z-index는 컨테이너가 담당하므로 제거합니다. */
+      width: 100%; /* 컨테이너 너비에 100% 맞춤 */
+      height: 200px; /* 여기에서 세로 높이를 조절하세요. */
+    }
+
+    /* 3. 정보창(.overlay-info) 스타일 수정 */
+    .overlay-info {
+      /* position, bottom, left, z-index를 제거하여 일반 블록처럼 지도 아래에 붙게 합니다. */
+      width: 100%; /* 컨테이너 너비에 100% 맞춤 */
+      box-sizing: border-box; /* 패딩을 포함하여 너비를 계산하도록 설정 */
       background: rgba(0, 0, 0, 0.6);
       color: white;
       padding: 10px;
       font-size: 14px;
-      z-index: 1;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 10px;
     }
+
     .overlay-info img.logo {
       height: 20px;
       vertical-align: middle;
@@ -53,28 +65,32 @@
 </head>
 <body>
 
-<div id="map"></div>
-<div class="overlay-info">
-  <span id="distance">주행 거리: 0.00km</span>
-  <span id="earnings">수익: 0원</span>
-  <span id="likes">❤️ 0</span>
-  <img class="logo" src="https://yourcdn.com/chzzk.png" />
-  <img class="logo" src="https://yourcdn.com/soop.png" />
-  <img class="logo" src="https://yourcdn.com/twitch.svg" />
-  <img class="logo" src="https://yourcdn.com/youtube.svg" />
+<!-- 변경된 HTML 구조 -->
+<div class="map-container">
+  <div id="map"></div>
+  <div class="overlay-info">
+    <span id="distance">주행 거리: 0.00km</span>
+    <span id="earnings">수익: 0원</span>
+    <span id="likes">❤️ 0</span>
+    <img class="logo" src="https://yourcdn.com/chzzk.png" />
+    <img class="logo" src="https://yourcdn.com/soop.png" />
+    <img class="logo" src="https://yourcdn.com/twitch.svg" />
+    <img class="logo" src="https://yourcdn.com/youtube.svg" />
+  </div>
 </div>
 
 <script>
+  // 스크립트 코드는 변경할 필요가 없습니다.
   mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw'; // 사용자의 토큰으로 교체
-const map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v12',
-  center: [126.8540, 35.1291],
-  zoom: 17,
-  interactive: true  // ← 변경됨
-});
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [126.8540, 35.1291],
+    zoom: 17,
+    interactive: true
+  });
 
-map.addControl(new mapboxgl.NavigationControl());  // 확대/축소 버튼 추가
+  map.addControl(new mapboxgl.NavigationControl());
 
   const el = document.createElement('img');
   el.src = 'https://ljw2455qq.github.io/rider-324/profile.png';
@@ -130,5 +146,6 @@ map.addControl(new mapboxgl.NavigationControl());  // 확대/축소 버튼 추�
     }
   });
 </script>
+
 </body>
 </html>
