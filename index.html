@@ -1,52 +1,134 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>지도 오버레이</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <title>hooni 스타일 GPS 오버레이</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background: transparent;
+      font-family: sans-serif;
       overflow: hidden;
     }
-
     #map {
       position: absolute;
-      right: 20px;
-      bottom: 20px;
-      width: 250px;
-      height: 250px;
-      border-radius: 12px;
+      top: 0; left: 0;
+      width: 100%;
+      height: 300px;
+      z-index: 0;
+    }
+    .overlay-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 10px;
+      font-size: 14px;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .overlay-info img.logo {
+      height: 20px;
+      vertical-align: middle;
+    }
+    .marker-img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
       border: 2px solid white;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
-      z-index: 100;
+      box-shadow: 0 0 5px #000;
     }
   </style>
 </head>
 <body>
-  <div id="map"></div>
 
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <script>
-    mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN'; // ← 여기 본인 토큰으로 바꿔주세요
+<div id="map"></div>
+<div class="overlay-info">
+  <span id="distance">주행 거리: 0.00km</span>
+  <span id="earnings">수익: 0원</span>
+  <span id="likes">❤️ 0</span>
+  <img class="logo" src="https://yourcdn.com/chzzk.png" />
+  <img class="logo" src="https://yourcdn.com/soop.png" />
+  <img class="logo" src="https://yourcdn.com/twitch.svg" />
+  <img class="logo" src="https://yourcdn.com/youtube.svg" />
+</div>
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [126.8540, 35.1291],  // 초기 위치 (예: 익산)
-      zoom: 17,
-      interactive: false,
-      pixelRatio: 2  // ← 고화질 표시
-    });
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw'; // 사용자의 토큰으로 교체
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v12',
+  center: [126.8540, 35.1291],
+  zoom: 17,
+  interactive: true  // ← 변경됨
+});
 
-    // 예시: 마커 추가
-    new mapboxgl.Marker({ color: '#FF2D55' })
-      .setLngLat([126.8540, 35.1291])
-      .addTo(map);
-  </script>
+map.addControl(new mapboxgl.NavigationControl());  // 확대/축소 버튼 추가
+
+  const el = document.createElement('img');
+  el.src = 'https://ljw2455qq.github.io/rider-324/profile.png';
+  el.className = 'marker-img';
+  const marker = new mapboxgl.Marker(el).setLngLat([126.8540, 35.1291]).addTo(map);
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5hMmN9QFgdFtaA5gicS_pj-blu_jJdvE",
+    authDomain: "rider-bf48b.firebaseapp.com",
+    databaseURL: "https://rider-bf48b-default-rtdb.firebaseio.com",
+    projectId: "rider-bf48b",
+    storageBucket: "rider-bf48b.appspot.com",
+    messagingSenderId: "1026929653322",
+    appId: "1:1026929653322:web:b90541cccba5b4186198b3"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let prev = null;
+  let total = 0;
+
+  function deg2rad(d) { return d * (Math.PI / 180); }
+  function getDistance(a, b) {
+    const R = 6371;
+    const dLat = deg2rad(b.lat - a.lat);
+    const dLon = deg2rad(b.lng - a.lng);
+    const c = Math.sin(dLat / 2) ** 2 +
+              Math.cos(deg2rad(a.lat)) * Math.cos(deg2rad(b.lat)) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+  }
+
+  db.ref('location').on('value', snap => {
+    const val = snap.val();
+    if (!val) return;
+    const { lat, lng } = val;
+    marker.setLngLat([lng, lat]);
+    map.setCenter([lng, lat]);
+
+    if (prev) {
+      const dist = getDistance(prev, { lat, lng });
+      if (dist < 1) total += dist;
+      document.getElementById('distance').innerText = `주행 거리: ${total.toFixed(2)}km`;
+      document.getElementById('earnings').innerText = `수익: ${(total * 900).toLocaleString()}원`;
+    }
+    prev = { lat, lng };
+  });
+
+  db.ref('stats/heart').on('value', snap => {
+    const h = snap.val();
+    if (h !== null) {
+      document.getElementById('likes').innerText = `❤️ ${h}`;
+    }
+  });
+</script>
 </body>
 </html>
