@@ -33,14 +33,12 @@ function fetchDistance(origin, dest) {
 async function showDistance() {
   const output = document.getElementById('output');
   try {
-    // 현재 위치 가져오기
     const coords = await getCurrentPosition();
 
-    // 예시: 1km 북쪽 좌표를 계산 (약 0.009° ≈ 1km)
+    // 예시: 북쪽으로 ~1km 이동 (약 0.009°)
     const destLat = coords.latitude + 0.009;
     const destLng = coords.longitude;
 
-    // RTIRL 호출
     const data = await fetchDistance(
       { latitude: coords.latitude, longitude: coords.longitude },
       { lat: destLat, lng: destLng }
@@ -53,5 +51,7 @@ async function showDistance() {
   }
 }
 
+
 // 페이지 로드 시 실행
 window.addEventListener('load', showDistance);
+
