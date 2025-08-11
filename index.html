@@ -36,13 +36,15 @@ const map = new mapboxgl.Map({
 function updateDistance() {
   const url = 'https://overlays.rtirl.com/distance/km.html?key=zeoeyze9htbyx455';
 
-  fetch(url)
-    .then(r => r.json())
-    .then(data => {
-      // data.distance_km : 거리(킬로미터)
-      document.getElementById('distance').textContent =
-        `거리: ${data.distance_km.toFixed(3)} km`;
-    })
+// 기존 코드 중, API 호출 후 처리 부분
+fetch(url)
+  .then(r => r.json())
+  .then(data => {
+    // data.distance_km : 거리(킬로미터)
+    document.getElementById('distance').textContent =
+      `거리: ${data.distance_km.toFixed(2)} km`;
+  })
+
     .catch(err => {
       console.error('RTIRL API 호출 실패:', err);
       document.getElementById('distance').textContent = '거리 계산 오류';
