@@ -1,416 +1,118 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS 거리 추적기</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-        }
+<meta charset="UTF-8">
+<title>GPS 추적기 (컴팩트)</title>
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+<style>
+    /* 기본 reset */
+    *{margin:0;padding:0;box-sizing:border-box;}
 
-        .distance-display {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-        }
+    body{
+        font-family:"Noto Sans KR","Arial",sans-serif;
+        background:#f9fafc;
+        color:#222;
+        line-height:1.5;
+        padding:10px 20px;
+    }
 
-        .total-distance {
-            font-size: 3em;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #00ff88;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-        }
+    h1{font-size:1.4rem;margin-bottom:.8rem;}
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
+    /* 버튼 스타일 */
+    .btn{
+        display:inline-flex;align-items:center;gap:.3rem;
+        font-size:.85rem;padding:.35rem .7rem;
+        border:none;border-radius:.25rem;
+        background:#1976d2;color:white;
+        cursor:pointer;transition:background .2s;
+    }
+    .btn:hover{background:#1565c0;}
+    .btn:disabled{opacity:.55;background:#90a4ae;}
 
-        .info-card {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-        }
+    /* 카드 그리드 */
+    .card-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+        gap:.8rem;margin-top:.8rem;
+    }
+    .card{
+        background:white;border-radius:.25rem;
+        box-shadow:0 1px 3px rgba(0,0,0,.12);
+        padding:.6rem;
+        font-size:.85rem;/* 줄임 */
+    }
+    .card h2{font-weight:bold;font-size:.95rem;margin-bottom:.35rem;}
+    .card p{margin-bottom:.25rem;}
 
-        .info-label {
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin-bottom: 5px;
-        }
+    /* 라벨 + 값 정렬 */
+    .info-row{
+        display:flex;justify-content:space-between;
+        font-size:.8rem;/* 줄임 */
+        margin-bottom:.15rem;
+    }
+    .label{color:#555;font-weight:500;}
+    .value{font-family:"Consolas","Monaco",monospace;}
 
-        .info-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-        }
+    /* 로그 영역 */
+    #routeLog{
+        height:120px;overflow-y:auto;background:white;border-radius:.25rem;
+        padding:.5rem;margin-top:.8rem;
+        font-size:.78rem;font-family:"Consolas","Monaco",monospace;
+        border:1px solid #e0e0e0;
+    }
 
-        .controls {
-            text-align: center;
-            margin: 20px 0;
-        }
+    /* 상태 표시 */
+    .status{font-weight:bold;}
+    .active{color:#388e3c;}
+    .inactive{color:#9e9e9e;}
 
-        button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-weight: bold;
-        }
-
-        .status.active {
-            background: rgba(76, 175, 80, 0.8);
-        }
-
-        .status.inactive {
-            background: rgba(244, 67, 54, 0.8);
-        }
-
-        .api-selector {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        select {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 10px;
-            border-radius: 5px;
-            margin: 0 10px;
-        }
-
-        option {
-            background: #333;
-            color: white;
-        }
-
-        .route-log {
-            max-height: 200px;
-            overflow-y: auto;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
-        .tracking {
-            animation: pulse 2s infinite;
-        }
-    </style>
+    @media(max-width:480px){
+        body{padding:.5rem 1rem;}/* 모바일용 여백 축소 */
+        h1{font-size:1.2rem;}
+        .btn{font-size:.8rem;padding:.3rem .6rem;}
+        .card-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+    }
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <h1 style="text-align: center; margin-bottom: 30px;">🗺️ GPS 거리 추적기</h1>
+<h1>GPS 추적기 (컴팩트)</h1>
 
-        <div class="api-selector">
-            <label>API 선택:</label>
-            <select id="apiType">
-                <option value="browser">브라우저 GPS API</option>
-                <option value="google">Google Maps API</option>
-                <option value="openweather">OpenWeather API</option>
-            </select>
-            <input type="text" id="apiKey" placeholder="API 키 (필요시)" style="margin-left: 10px; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-        </div>
+<div class="btn-group">
+    <button id="startBtn"   class="btn">▶ 시작</button>
+    <button id="stopBtn"    class="btn" disabled>⏹ 중지</button>
+    <button id="resetDist"  class="btn">↺ 초기화</button>
+    <button id="exportData" class="btn">💾 내보내기</button>
+</div>
 
-        <div class="distance-display">
-            <div style="font-size: 1.2em; margin-bottom: 10px;">총 이동거리</div>
-            <div class="total-distance" id="totalDistance">0.00 km</div>
-        </div>
+<p><span class="status inactive" id="status">준비 완료</span></p>
 
-        <div class="info-grid">
-            <div class="info-card">
-                <div class="info-label">현재 위도</div>
-                <div class="info-value" id="latitude">--</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">현재 경도</div>
-                <div class="info-value" id="longitude">--</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">현재 속도</div>
-                <div class="info-value" id="speed">-- km/h</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">정확도</div>
-                <div class="info-value" id="accuracy">-- m</div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button id="startBtn" onclick="startTracking()">추적 시작</button>
-            <button id="stopBtn" onclick="stopTracking()" disabled>추적 중지</button>
-            <button onclick="resetDistance()">거리 초기화</button>
-            <button onclick="exportData()">데이터 내보내기</button>
-        </div>
-
-        <div class="status inactive" id="status">추적 중지됨</div>
-
-        <div class="route-log" id="routeLog">
-            <div>추적 로그가 여기에 표시됩니다...</div>
-        </div>
+<div class="card-grid">
+    <!-- 좌표 카드 -->
+    <div class="card"><h2>위도/경도</h2>
+        <div class="info-row"><span class="label">위도:</span><span class="value" id="latitude"></span></div>
+        <div class="info-row"><span class="label">경도:</span><span class="value" id="longitude"></span></div>
     </div>
 
-    <script>
-        let isTracking = false;
-        let watchId = null;
-        let totalDistance = 0;
-        let lastPosition = null;
-        let positions = [];
+    <!-- 정확도 카드 -->
+    <div class="card"><h2>정확도</h2>
+        <div class="info-row"><span class="label">거리:</span><span class="value" id="accuracy"></span></div>
+    </div>
 
-        // API 키 및 엔드포인트 설정
-        const API_CONFIGS = {
-            google: {
-                geocoding: 'https://maps.googleapis.com/maps/api/geocode/json',
-                directions: 'https://maps.googleapis.com/maps/api/directions/json'
-            },
-            openweather: {
-                geo: 'http://api.openweathermap.org/geo/1.0/direct'
-            }
-        };
+    <!-- 속도 카드 -->
+    <div class="card"><h2>속도</h2>
+        <div class="info-row"><span class="label">지표면:</span><span class="value" id="speed"></span></div>
+    </div>
 
-        // Haversine 공식으로 두 지점 간 거리 계산 (km)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // 지구 반지름 (km)
-            const dLat = toRad(lat2 - lat1);
-            const dLon = toRad(lon2 - lon1);
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                     Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
+    <!-- 거리 카드 -->
+    <div class="card"><h2>거리</h2>
+        <div class="info-row"><span class="label">총 이동량:</span><span class="value" id="totalDistance"></span></div>
+    </div>
+</div>
 
-        function toRad(value) {
-            return value * Math.PI / 180;
-        }
+<h3 style="margin-top:.6rem;">경로 로그</h3>
+<div id="routeLog"><div>추적 로그가 여기에 표시됩니다…</div></div>
 
-        // 브라우저 GPS API 사용
-        function startBrowserTracking() {
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 1000
-            };
-
-            watchId = navigator.geolocation.watchPosition(
-                handlePosition,
-                handleError,
-                options
-            );
-        }
-
-        // Google Maps API 사용 (역지오코딩)
-        async function reverseGeocodeGoogle(lat, lng) {
-            const apiKey = document.getElementById('apiKey').value;
-            if (!apiKey) return null;
-
-            try {
-                const response = await fetch(
-                    `${API_CONFIGS.google.geocoding}?latlng=${lat},${lng}&key=${apiKey}`
-                );
-                const data = await response.json();
-                return data.results[0]?.formatted_address || '';
-            } catch (error) {
-                console.error('Google API 오류:', error);
-                return null;
-            }
-        }
-
-        // 위치 정보 처리
-        async function handlePosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
-            const speed = position.coords.speed;
-
-            // UI 업데이트
-            document.getElementById('latitude').textContent = lat.toFixed(6);
-            document.getElementById('longitude').textContent = lon.toFixed(6);
-            document.getElementById('accuracy').textContent = `±${accuracy.toFixed(0)}m`;
-            document.getElementById('speed').textContent = speed ? 
-                `${(speed * 3.6).toFixed(1)} km/h` : '0.0 km/h';
-
-            // 거리 계산
-            if (lastPosition) {
-                const distance = calculateDistance(
-                    lastPosition.lat, lastPosition.lon,
-                    lat, lon
-                );
-                
-                // 정확도가 좋고, 이동거리가 합리적일 때만 추가
-                if (accuracy < 50 && distance < 1) { // 1km 이상 점프는 무시
-                    totalDistance += distance;
-                    document.getElementById('totalDistance').textContent = 
-                        `${totalDistance.toFixed(2)} km`;
-                    
-                    logPosition(lat, lon, distance);
-                }
-            }
-
-            lastPosition = { lat, lon };
-            positions.push({
-                timestamp: new Date(),
-                lat,
-                lon,
-                accuracy,
-                speed: speed || 0
-            });
-
-            // API별 추가 정보 가져오기
-            const apiType = document.getElementById('apiType').value;
-            if (apiType === 'google') {
-                const address = await reverseGeocodeGoogle(lat, lon);
-                if (address) {
-                    logMessage(`주소: ${address.substring(0, 50)}...`);
-                }
-            }
-        }
-
-        function handleError(error) {
-            const messages = {
-                1: '위치 접근이 거부되었습니다.',
-                2: '위치 정보를 사용할 수 없습니다.',
-                3: '위치 요청 시간이 초과되었습니다.'
-            };
-            
-            logMessage(`오류: ${messages[error.code] || '알 수 없는 오류'}`);
-            document.getElementById('status').textContent = '오류 발생';
-            document.getElementById('status').className = 'status inactive';
-        }
-
-        function logPosition(lat, lon, distance) {
-            const time = new Date().toLocaleTimeString();
-            const message = `${time}: ${lat.toFixed(6)}, ${lon.toFixed(6)} (+${(distance*1000).toFixed(0)}m)`;
-            logMessage(message);
-        }
-
-        function logMessage(message) {
-            const log = document.getElementById('routeLog');
-            const div = document.createElement('div');
-            div.textContent = message;
-            log.appendChild(div);
-            log.scrollTop = log.scrollHeight;
-        }
-
-        function startTracking() {
-            if (!navigator.geolocation) {
-                alert('이 브라우저는 GPS를 지원하지 않습니다.');
-                return;
-            }
-
-            isTracking = true;
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = false;
-            document.getElementById('status').textContent = 'GPS 추적 중...';
-            document.getElementById('status').className = 'status active tracking';
-
-            startBrowserTracking();
-            logMessage('추적을 시작했습니다.');
-        }
-
-        function stopTracking() {
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-
-            isTracking = false;
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('status').textContent = '추적 중지됨';
-            document.getElementById('status').className = 'status inactive';
-
-            logMessage('추적을 중지했습니다.');
-        }
-
-        function resetDistance() {
-            if (confirm('거리를 초기화하시겠습니까?')) {
-                totalDistance = 0;
-                lastPosition = null;
-                positions = [];
-                document.getElementById('totalDistance').textContent = '0.00 km';
-                document.getElementById('routeLog').innerHTML = '<div>추적 로그가 여기에 표시됩니다...</div>';
-                logMessage('거리가 초기화되었습니다.');
-            }
-        }
-
-        function exportData() {
-            const data = {
-                totalDistance,
-                positions,
-                exportTime: new Date()
-            };
-
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
-                type: 'application/json'
-            });
-            
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `gps-tracking-${new Date().getTime()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // 페이지 언로드 시 추적 중지
-        window.addEventListener('beforeunload', function() {
-            if (isTracking) {
-                stopTracking();
-            }
-        });
-
-        // 초기 메시지
-        logMessage('GPS 추적기가 준비되었습니다. "추적 시작" 버튼을 클릭하세요.');
-    </script>
+<script src="gps-tracking.js"></script>
 </body>
 </html>
