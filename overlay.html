@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>OBS 오버레이</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: transparent; font-family: sans-serif; }
+        #overlay { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: rgba(0,0,0,0.5);
+            color: white; 
+            font-size: 24px; 
+            padding: 10px 20px; 
+            border-radius: 10px;
+        }
+        span { margin: 0 15px; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <span id="dailyText">일 수익: -</span>
+        <span id="weeklyText">주 수익: -</span>
+        <span id="monthlyText">월 수익: -</span>
+    </div>
+
+    <script>
+        db.ref('overlayData').on('value', (snapshot) => {
+            let data = snapshot.val();
+            if (data) {
+                document.getElementById('dailyText').textContent = `일 수익: ${data.daily}`;
+                document.getElementById('weeklyText').textContent = `주 수익: ${data.weekly}`;
+                document.getElementById('monthlyText').textContent = `월 수익: ${data.monthly}`;
+            }
+        });
+    </script>
+</body>
+</html>
