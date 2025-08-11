@@ -1,42 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>OBS 오버레이</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="firebase.js"></script>
-    <style>
-        body { margin: 0; padding: 0; background: transparent; font-family: sans-serif; }
-        #overlay { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: rgba(0,0,0,0.5);
-            color: white; 
-            font-size: 24px; 
-            padding: 10px 20px; 
-            border-radius: 10px;
-        }
-        span { margin: 0 15px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPS Overlay (컴퓨터)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    body { margin: 0; background: transparent; color: white; }
+    #map { width: 300px; height: 200px; }  /* 오버레이 크기 조정 */
+    #info { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.5); padding: 5px; }
+  </style>
 </head>
 <body>
-    <div id="overlay">
-        <span id="dailyText">일 수익: -</span>
-        <span id="weeklyText">주 수익: -</span>
-        <span id="monthlyText">월 수익: -</span>
-    </div>
+  <div id="map"></div>
+  <div id="info">위치: 대기 중...</div>
 
-    <script>
-        db.ref('overlayData').on('value', (snapshot) => {
-            let data = snapshot.val();
-            if (data) {
-                document.getElementById('dailyText').textContent = `일 수익: ${data.daily}`;
-                document.getElementById('weeklyText').textContent = `주 수익: ${data.weekly}`;
-                document.getElementById('monthlyText').textContent = `월 수익: ${data.monthly}`;
-            }
-        });
-    </script>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script type="module">
+    import { db } from './firebase.js';  // src/firebase.js 경로에 맞게 조정
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+    // 지도 초기화
+    const map = L.map('map').setView([37.5665, 126.9780], 13);  // 기본 서울 위치
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    let marker = L.marker([37.5665, 126.9780]).addTo(map);
+
+    // Firebase 실시간 리스너
+    const gpsRef = ref(db, 'gps');
+    onValue(gpsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.latitude && data.longitude) {
+        const latLng = [data.latitude, data.longitude];
+        marker.setLatLng(latLng);
+        map.setView(latLng, 17);
+        document.getElementById('info').innerText = `위도: ${data.latitude}, 경도: ${data.longitude}`;
+      }
+    });
+  </script>
 </body>
 </html>
