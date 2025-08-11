@@ -29,14 +29,18 @@
     let marker = L.marker([37.5665, 126.9780]).addTo(map);
 
     // Firebase 실시간 리스너
-    const gpsRef = ref(db, 'gps');
-    onValue(gpsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.latitude && data.longitude) {
-        const latLng = [data.latitude, data.longitude];
-        marker.setLatLng(latLng);
-        map.setView(latLng, 17);
-        document.getElementById('info').innerText = `위도: ${data.latitude}, 경도: ${data.longitude}`;
+
+
+        onValue(gpsRef, (snapshot) => {
+  const data = snapshot.val();
+  console.log('Firebase Data:', data); // 디버깅용
+  if (data && data.latitude && data.longitude) {
+    const latLng = [data.latitude, data.longitude];
+    marker.setLatLng(latLng);
+    map.setView(latLng, 17);
+    document.getElementById('info').innerText = `위도: ${data.latitude}, 경도: ${data.longitude}`;
+  }
+});
       }
     });
   </script>
