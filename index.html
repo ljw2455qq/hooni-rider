@@ -2,60 +2,22 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>Mapbox 오버레이 – RTIRL 거리 표시</title>
-
-<link href='https://api.mapbox.com/mapbox-gl-js/v3.4.1/mapbox-gl.css' rel='stylesheet' />
+<title>RTIRL 거리 (키로수) 오버레이</title>
 
 <style>
-  body{margin:0;padding:0;}
-  #map{position:absolute;top:0;bottom:0;width:100%;}
-  #distance{
-    position:absolute;top:12px;left:50%;transform:translateX(-50%);
-    background:#fff;border-radius:4px;padding:6px 10px;
-    font-family:sans-serif;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.15);
+  body{margin:0;font-family:sans-serif;background:#f9f9f9;}
+  #output{
+    position:absolute;top:20px;left:50%;transform:translateX(-50%);
+    background:#fff;border-radius:4px;padding:8px 12px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+    font-size:16px;font-weight:bold;
   }
 </style>
 </head>
 
 <body>
-<div id="map"></div>
-<div id="distance">거리: -- km</div>
+<div id="output">키로수 계산 중…</div>
 
-<script src='https://api.mapbox.com/mapbox-gl-js/v3.4.1/mapbox-gl.js'></script>
-<script>
-// ================= Mapbox 초기화 ==================================
-mapboxgl.accessToken = 'pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw';   // ← 여기에 실제 토큰 입력
-const map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v11',
-  center: [127.0, 37.56],    // 예시: 서울역 근처
-  zoom: 15
-});
-
-// ================= RTIRL 거리 오버레이 호출 ======================
-function updateDistance() {
-  const url = 'https://overlays.rtirl.com/distance/km.html?key=zeoeyze9htbyx455';
-
-// 기존 코드 중, API 호출 후 처리 부분
-fetch(url)
-  .then(r => r.json())
-  .then(data => {
-    // data.distance_km : 거리(킬로미터)
-    document.getElementById('distance').textContent =
-      `거리: ${data.distance_km.toFixed(2)} km`;
-  })
-
-    .catch(err => {
-      console.error('RTIRL API 호출 실패:', err);
-      document.getElementById('distance').textContent = '거리 계산 오류';
-    });
-}
-
-// 지도 로드 후 한 번 호출
-map.on('load', updateDistance);
-
-// 필요하면 마커를 드래그하거나 클릭할 때마다 거리 갱신 가능
-// 예시: 두 지점 좌표를 바꿔서 다시 호출하려면 `updateDistance()` 재호출
-</script>
+<script src="./app.js"></script>
 </body>
 </html>
