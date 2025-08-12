@@ -8,7 +8,7 @@
     <script src="firebase.js"></script>
     <style>
         body { font-family: sans-serif; background: #222; color: white; text-align: center; padding: 20px; }
-        button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 5px; }
         button:hover { background: #45a049; }
         #distance { font-size: 24px; margin-top: 20px; }
         #status { font-size: 18px; margin-top: 10px; }
@@ -17,12 +17,24 @@
 <body>
     <h1>GPS 위치 기록 및 누적 거리 계산</h1>
     <button onclick="startTracking()">추적 시작</button>
+    <button onclick="resetTracking()">리셋</button>
     <div id="distance">총 이동량: 0.00 km</div>
     <div id="status">GPS 대기 중...</div>
 
     <script>
         let totalDistance = 0;
         let previousPosition = null;
+
+        // 페이지 로드 시 Firebase에서 마지막 거리 로드
+        db.ref('gpsData').once('value').then((snapshot) => {
+            let data = snapshot.val();
+            if (data && data.distance) {
+                totalDistance = parseFloat(data.distance);
+                document.getElementById('distance').textContent = `총 이동량: ${totalDistance.toFixed(2)} km`;
+            }
+        }).catch(err => {
+            console.error("데이터 로드 실패:", err);
+        });
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; // 지구 반경 (km)
@@ -55,7 +67,6 @@
             document.getElementById('distance').textContent = `총 이동량: ${totalDistance.toFixed(2)} km`;
             document.getElementById('status').innerText = `마지막 업데이트: ${new Date().toLocaleTimeString()}`;
 
-            // Firebase에 GPS 위치 및 누적 거리 저장
             db.ref('gpsData').set({
                 latitude: currentPosition.latitude,
                 longitude: currentPosition.longitude,
@@ -81,6 +92,22 @@
             } else {
                 document.getElementById('status').innerText = "GPS를 지원하지 않습니다.";
             }
+        }
+
+        function resetTracking() {
+            totalDistance = 0;
+            previousPosition = null;
+            document.getElementById('distance').textContent = `총 이동량: ${totalDistance.toFixed(2)} km`;
+            document.getElementById('status').innerText = "리셋 완료. GPS 대기 중...";
+
+            db.ref('gpsData').set({
+                latitude: 0,
+                longitude: 0,
+                distance: totalDistance.toFixed(2),
+                timestamp: Date.now()
+            }).catch(err => {
+                console.error("리셋 실패:", err);
+            });
         }
     </script>
 </body>
