@@ -1,118 +1,78 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>GPS 추적기 (컴팩트)</title>
-
-<style>
-    /* 기본 reset */
-    *{margin:0;padding:0;box-sizing:border-box;}
-
-    body{
-        font-family:"Noto Sans KR","Arial",sans-serif;
-        background:#f9fafc;
-        color:#222;
-        line-height:1.5;
-        padding:10px 20px;
-    }
-
-    h1{font-size:1.4rem;margin-bottom:.8rem;}
-
-    /* 버튼 스타일 */
-    .btn{
-        display:inline-flex;align-items:center;gap:.3rem;
-        font-size:.85rem;padding:.35rem .7rem;
-        border:none;border-radius:.25rem;
-        background:#1976d2;color:white;
-        cursor:pointer;transition:background .2s;
-    }
-    .btn:hover{background:#1565c0;}
-    .btn:disabled{opacity:.55;background:#90a4ae;}
-
-    /* 카드 그리드 */
-    .card-grid{
-        display:grid;
-        grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-        gap:.8rem;margin-top:.8rem;
-    }
-    .card{
-        background:white;border-radius:.25rem;
-        box-shadow:0 1px 3px rgba(0,0,0,.12);
-        padding:.6rem;
-        font-size:.85rem;/* 줄임 */
-    }
-    .card h2{font-weight:bold;font-size:.95rem;margin-bottom:.35rem;}
-    .card p{margin-bottom:.25rem;}
-
-    /* 라벨 + 값 정렬 */
-    .info-row{
-        display:flex;justify-content:space-between;
-        font-size:.8rem;/* 줄임 */
-        margin-bottom:.15rem;
-    }
-    .label{color:#555;font-weight:500;}
-    .value{font-family:"Consolas","Monaco",monospace;}
-
-    /* 로그 영역 */
-    #routeLog{
-        height:120px;overflow-y:auto;background:white;border-radius:.25rem;
-        padding:.5rem;margin-top:.8rem;
-        font-size:.78rem;font-family:"Consolas","Monaco",monospace;
-        border:1px solid #e0e0e0;
-    }
-
-    /* 상태 표시 */
-    .status{font-weight:bold;}
-    .active{color:#388e3c;}
-    .inactive{color:#9e9e9e;}
-
-    @media(max-width:480px){
-        body{padding:.5rem 1rem;}/* 모바일용 여백 축소 */
-        h1{font-size:1.2rem;}
-        .btn{font-size:.8rem;padding:.3rem .6rem;}
-        .card-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
-    }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPS Tracker (핸드폰)</title>
 </head>
-
 <body>
-<h1>GPS 추적기 (컴팩트)</h1>
+  <h1>GPS 이동 거리 추적</h1>
+  <p>총 이동량: <span id="distance">0.00 km</span></p>
+  <p id="status">GPS 대기 중...</p>
+  <button onclick="startTracking()">시작</button>
 
-<div class="btn-group">
-    <button id="startBtn"   class="btn">▶ 시작</button>
-    <button id="stopBtn"    class="btn" disabled>⏹ 중지</button>
-    <button id="resetDist"  class="btn">↺ 초기화</button>
-    <button id="exportData" class="btn">💾 내보내기</button>
-</div>
+  <script type="module">
+    import { db } from './firebase.js';
+    import { ref, set } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-<p><span class="status inactive" id="status">준비 완료</span></p>
+    let totalDistance = 0;
+    let previousPosition = null;
 
-<div class="card-grid">
-    <!-- 좌표 카드 -->
-    <div class="card"><h2>위도/경도</h2>
-        <div class="info-row"><span class="label">위도:</span><span class="value" id="latitude"></span></div>
-        <div class="info-row"><span class="label">경도:</span><span class="value" id="longitude"></span></div>
-    </div>
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // 지구 반경 (km)
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
 
-    <!-- 정확도 카드 -->
-    <div class="card"><h2>정확도</h2>
-        <div class="info-row"><span class="label">거리:</span><span class="value" id="accuracy"></span></div>
-    </div>
+    function updateDistance(position) {
+      const currentPosition = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
 
-    <!-- 속도 카드 -->
-    <div class="card"><h2>속도</h2>
-        <div class="info-row"><span class="label">지표면:</span><span class="value" id="speed"></span></div>
-    </div>
+      if (previousPosition) {
+        const distance = calculateDistance(
+          previousPosition.latitude,
+          previousPosition.longitude,
+          currentPosition.latitude,
+          currentPosition.longitude
+        );
+        totalDistance += distance;
+      }
 
-    <!-- 거리 카드 -->
-    <div class="card"><h2>거리</h2>
-        <div class="info-row"><span class="label">총 이동량:</span><span class="value" id="totalDistance"></span></div>
-    </div>
-</div>
+      previousPosition = currentPosition;
+      document.getElementById('distance').textContent = totalDistance.toFixed(2) + ' km';
+      document.getElementById('status').innerText = `마지막 업데이트: ${new Date().toLocaleTimeString()}`;
 
-<h3 style="margin-top:.6rem;">경로 로그</h3>
-<div id="routeLog"><div>추적 로그가 여기에 표시됩니다…</div></div>
+      // Firebase에 업로드
+      set(ref(db, 'gps'), {
+        distance: totalDistance.toFixed(2),
+        latitude: currentPosition.latitude,
+        longitude: currentPosition.longitude,
+        timestamp: Date.now()
+      });
+    }
 
-<script src="gps-tracking.js"></script>
+    function handleError(error) {
+      document.getElementById('status').innerText = `오류: ${error.message}`;
+    }
+
+    function startTracking() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(updateDistance, handleError, {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        });
+      } else {
+        document.getElementById('status').innerText = "GPS 지원 안 됨";
+      }
+    }
+  </script>
 </body>
 </html>
