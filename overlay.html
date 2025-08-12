@@ -18,13 +18,10 @@
             padding: 10px 20px; 
             border-radius: 10px;
         }
-        span { margin: 0 15px; }
     </style>
 </head>
 <body>
     <div id="overlay">
-        <span id="latitudeText">위도: -</span>
-        <span id="longitudeText">경도: -</span>
         <span id="distanceText">총 이동량: 0.00 km</span>
     </div>
 
@@ -32,8 +29,6 @@
         db.ref('gpsData').on('value', (snapshot) => {
             let data = snapshot.val();
             if (data) {
-                document.getElementById('latitudeText').textContent = `위도: ${data.latitude}`;
-                document.getElementById('longitudeText').textContent = `경도: ${data.longitude}`;
                 document.getElementById('distanceText').textContent = `총 이동량: ${data.distance} km`;
             }
         });
