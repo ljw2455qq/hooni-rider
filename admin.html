@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GPS 추적 페이지</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; text-align: center; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+        #distance { font-size: 24px; margin-top: 20px; }
+        #status { font-size: 18px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>GPS 위치 기록 및 누적 거리 계산</h1>
+    <button onclick="startTracking()">추적 시작</button>
+    <div id="distance">총 이동량: 0.00 km</div>
+    <div id="status">GPS 대기 중...</div>
+
+    <script>
+        let totalDistance = 0;
+        let previousPosition = null;
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // 지구 반경 (km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function updateDistance(position) {
+            const currentPosition = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+
+            if (previousPosition) {
+                const distance = calculateDistance(
+                    previousPosition.latitude,
+                    previousPosition.longitude,
+                    currentPosition.latitude,
+                    currentPosition.longitude
+                );
+                totalDistance += distance;
+            }
+
+            previousPosition = currentPosition;
+            document.getElementById('distance').textContent = `총 이동량: ${totalDistance.toFixed(2)} km`;
+            document.getElementById('status').innerText = `마지막 업데이트: ${new Date().toLocaleTimeString()}`;
+
+            // Firebase에 GPS 위치 및 누적 거리 저장
+            db.ref('gpsData').set({
+                latitude: currentPosition.latitude,
+                longitude: currentPosition.longitude,
+                distance: totalDistance.toFixed(2),
+                timestamp: Date.now()
+            }).catch(err => {
+                console.error("저장 실패:", err);
+            });
+        }
+
+        function handleError(error) {
+            document.getElementById('status').innerText = `오류: ${error.message}`;
+        }
+
+        function startTracking() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(updateDistance, handleError, {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                });
+                document.getElementById('status').innerText = "추적 시작됨...";
+            } else {
+                document.getElementById('status').innerText = "GPS를 지원하지 않습니다.";
+            }
+        }
+    </script>
+</body>
+</html>
