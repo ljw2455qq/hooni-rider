@@ -19,15 +19,15 @@
         font-family: -apple-system, BlinkMacSystemFont,
             "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
     }
-      #map {
+    #map {
         width: 400px; /* 고정 크기 */
         height: 300px;
         position: absolute;
         top: 0;
         left: 0;
         opacity: 0.85; /* 약 15% 투명도 (85% 불투명) */
-      }
-      #distance-overlay {
+    }
+    #distance-overlay {
         position: absolute;
         top: 310px; /* 지도 아래 배치 */
         left: 0;
@@ -39,13 +39,14 @@
         border-radius: 5px;
         text-align: center;
         white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+    }
 </style>
 </head>
 
 <body>
 <div id="map"></div>
-<div id="overlay">
-    <span id="distanceText">총 이동 거리: 0.00 km</span>
+<div id="distance-overlay">
+    총 이동 거리: <span id="distanceText">0.00 km</span>
 </div>
 
 <script>
@@ -60,7 +61,7 @@
         zoom: 15
     });
 
-    // 사용자 마커
+    // 사용자 마커 (프로필 이미지)
     const el = document.createElement('div');
     el.style.backgroundImage = 'url("https://raw.githubusercontent.com/ljw2455qq/realtimeirl/main/profile.png")';
     el.style.width = '30px';
@@ -74,7 +75,7 @@
         .setLngLat([126.9780, 37.5665])
         .addTo(map);
 
-    // 거리 계산 함수 (Haversine 공식)
+    // 거리 계산 (Haversine)
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3; // m
         const φ1 = lat1 * Math.PI/180;
@@ -93,7 +94,7 @@
     let totalDistance = 0;
     let prevLocation = null;
 
-    // RealtimeIRL로 GPS 위치 구독
+    // GPS 위치 구독
     RealtimeIRL.forPullKey(PULL_KEY).addLocationListener((location) => {
         if (location.latitude && location.longitude) {
             marker.setLngLat([location.longitude, location.latitude]);
@@ -109,12 +110,12 @@
                     prevLocation.latitude, prevLocation.longitude,
                     location.latitude, location.longitude
                 );
-                totalDistance += dist / 1000; // km 단위 변환
+                totalDistance += dist / 1000; // km 변환
             }
             prevLocation = location;
 
             document.getElementById("distanceText").textContent =
-                `총 이동 거리: ${totalDistance.toFixed(2)} km`;
+                `${totalDistance.toFixed(2)} km`;
         }
     });
 </script>
