@@ -1,38 +1,40 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>OBS 오버레이</title>
+    <meta charset="UTF-8">
+    <title>OBS 오버레이</title>
 
-<!-- Firebase 8.x SDK -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="firebase.js"></script>
+    <!-- Firebase 8.x SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase.js"></script>
 
-<style>
-    body{
-        margin:0;
-        padding:0;
-        background:transparent;
-        font-family:-apple-system, BlinkMacSystemFont,
-            "Segoe UI", Roboto, "Noto Sans KR",
-            sans-serif;
-    }
-    #overlay{
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        background:rgba(0,0,0,.5);
-        color:white;
-        font-size:24px;
-        padding:10px 20px;
-        border-radius:10px;
-    }
-    #overlay span{ margin:0 15px; }
-</style>
+    <style>
+        body{
+            margin:0;
+            padding:0;
+            background:transparent;
+            font-family:-apple-system, BlinkMacSystemFont,
+                "Segoe UI", Roboto, "Noto Sans KR",
+                sans-serif;
+        }
+        #overlay{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:rgba(0,0,0,.5);
+            color:white;
+            font-size:24px;
+            padding:10px 20px;
+            border-radius:10px;
+        }
+        #overlay span{ margin:0 15px; }
+    </style>
 </head>
 
 <body>
+<div id="map"></div>
+<div id="distance-overlay">총 이동 거리: 0.00 km</div>
 <div id="overlay">
     <span id="dailyText">일 수익: -</span>
     <span id="weeklyText">월 수익: -</span>
@@ -44,12 +46,10 @@
  * 숫자이면 천 단위 콤마를 붙이고, 아니면 그대로 반환.
  */
 function formatNumber(value) {
-    // 문자열이지만 숫자라면 정수로 변환
     const num = typeof value === 'string' ? Number(value) : value;
 
-    if (isNaN(num)) return value;            // NaN이면 원본 그대로
+    if (isNaN(num)) return value;            
 
-    // 숫자를 포맷해서 반환
     return new Intl.NumberFormat('ko-KR').format(Math.round(num));
 }
 
@@ -64,6 +64,85 @@ db.ref('overlayData').on('value', (snapshot) => {
     document.getElementById('monthlyText')
         .textContent = `년 수익: ${formatNumber(data.monthly)}`;
 });
+</script>
+
+<script>
+    const MAPBOX_TOKEN = "pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw";
+    const PULL_KEY = "zeoeyze9htbyx455"; 
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12', 
+      center: [126.9780, 37.5665], 
+      zoom: 16 
+    });
+
+    map.addControl(new MapboxLanguage({ defaultLanguage: 'ko' }));
+
+    map.on('style.load', () => {
+      map.setPaintProperty('road-label', 'text-opacity', 1.0); 
+      map.setPaintProperty('place-label', 'text-opacity', 1.0); 
+      map.setLayoutProperty('road-label', 'text-size', 14); 
+      map.setLayoutProperty('place-label', 'text-size', 14); 
+    });
+
+    const el = document.createElement('div');
+    el.style.backgroundImage = 'url("https://raw.githubusercontent.com/ljw2455qq/realtimeirl/main/profile.png")';
+    el.style.width = '25px';  
+    el.style.height = '25px';
+    el.style.backgroundSize = 'cover';
+    el.style.borderRadius = '50%';
+    el.style.border = '2px solid white';
+    el.style.boxShadow = '0 0 8px rgba(0,0,0,0.6)';
+    el.style.opacity = '1.0'; 
+
+    const marker = new mapboxgl.Marker(el)
+      .setLngLat([126.9780, 37.5665])
+      .addTo(map);
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; 
+      const φ1 = lat1 * Math.PI / 180; 
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; 
+    }
+
+    let totalDistance = 0;
+    let previousLocation = null;
+
+    RealtimeIRL.forPullKey(PULL_KEY).addLocationListener((location) => {
+      console.log("새 GPS 좌표:", location);
+
+      if (location.latitude && location.longitude) {
+        marker.setLngLat([location.longitude, location.latitude]);
+
+        map.flyTo({
+          center: [location.longitude, location.latitude],
+          essential: true,
+          speed: 0.8,
+          zoom: map.getZoom() 
+        });
+
+        if (previousLocation) {
+          const distance = calculateDistance(
+            previousLocation.latitude, previousLocation.longitude,
+            location.latitude, location.longitude
+          );
+          totalDistance += distance / 1000; 
+        }
+        previousLocation = location;
+
+        document.getElementById('distance-overlay').textContent = `총 이동 거리: ${totalDistance.toFixed(2)} km`;
+      }
+    });
 </script>
 
 </body>
