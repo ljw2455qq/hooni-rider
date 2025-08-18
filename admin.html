@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리 페이지</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; text-align: center; padding: 20px; }
+        input { padding: 8px; margin: 5px; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>OBS 오버레이 데이터 입력</h1>
+    <input id="daily" placeholder="일 수익" type="text"><br>
+    <input id="weekly" placeholder="월 수익" type="text"><br>
+    <input id="monthly" placeholder="년 수익" type="text"><br>
+    <button onclick="saveData()">저장</button>
+
+    <script>
+        function saveData() {
+            let daily = document.getElementById('daily').value;
+            let weekly = document.getElementById('weekly').value;
+            let monthly = document.getElementById('monthly').value;
+
+            db.ref('overlayData').set({
+                daily: daily,
+                weekly: weekly,
+                monthly: monthly
+            }).then(() => {
+                alert("저장 완료!");
+            }).catch(err => {
+                console.error("저장 실패:", err);
+            });
+        }
+    </script>
+</body>
+</html>

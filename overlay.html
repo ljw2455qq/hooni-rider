@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>OBS 오버레이</title>
+
+<!-- Firebase 8.x SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase.js"></script>
+
+<style>
+    body{
+        margin:0;
+        padding:0;
+        background:transparent;
+        font-family:-apple-system, BlinkMacSystemFont,
+            "Segoe UI", Roboto, "Noto Sans KR",
+            sans-serif;
+    }
+    #overlay{
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        background:rgba(0,0,0,.5);
+        color:white;
+        font-size:24px;
+        padding:10px 20px;
+        border-radius:10px;
+    }
+    #overlay span{ margin:0 15px; }
+</style>
+</head>
+
+<body>
+<div id="overlay">
+    <span id="dailyText">일 수익: -</span>
+    <span id="weeklyText">월 수익: -</span>
+    <span id="monthlyText">년 수익: -</span>
+</div>
+
+<script>
+/**
+ * 숫자이면 천 단위 콤마를 붙이고, 아니면 그대로 반환.
+ */
+function formatNumber(value) {
+    // 문자열이지만 숫자라면 정수로 변환
+    const num = typeof value === 'string' ? Number(value) : value;
+
+    if (isNaN(num)) return value;            // NaN이면 원본 그대로
+
+    // 숫자를 포맷해서 반환
+    return new Intl.NumberFormat('ko-KR').format(Math.round(num));
+}
+
+db.ref('overlayData').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    document.getElementById('dailyText')
+        .textContent   = `일 수익: ${formatNumber(data.daily)}`;
+    document.getElementById('weeklyText')
+        .textContent  = `월 수익: ${formatNumber(data.weekly)}`;
+    document.getElementById('monthlyText')
+        .textContent = `년 수익: ${formatNumber(data.monthly)}`;
+});
+</script>
+
+</body>
+</html>
