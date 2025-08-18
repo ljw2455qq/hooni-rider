@@ -19,20 +19,26 @@
         font-family: -apple-system, BlinkMacSystemFont,
             "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
     }
-    #map {
-        width: 100%;
-        height: 100vh; /* 전체 화면에 지도 */
-    }
-    #overlay {
+      #map {
+        width: 400px; /* 고정 크기 */
+        height: 300px;
         position: absolute;
-        bottom: 20px;
-        left: 20px;
-        background: rgba(0,0,0,0.6);
+        top: 0;
+        left: 0;
+        opacity: 0.85; /* 약 15% 투명도 (85% 불투명) */
+      }
+      #distance-overlay {
+        position: absolute;
+        top: 310px; /* 지도 아래 배치 */
+        left: 0;
+        width: 400px;
+        background: rgba(0, 0, 0, 0.5); /* 투명한 검은 배경 */
         color: white;
-        font-size: 20px;
-        padding: 8px 16px;
-        border-radius: 10px;
-    }
+        font-size: 18px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-align: center;
+        white-space: nowrap; /* 텍스트 줄바꿈 방지 */
 </style>
 </head>
 
