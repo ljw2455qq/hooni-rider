@@ -85,10 +85,8 @@
 
     // 지도 스타일 로드 후 텍스트 굵기 및 불투명도 조정
     map.on('style.load', () => {
-      // 주요 레이어에서 텍스트 스타일 수정
       map.setPaintProperty('road-label', 'text-opacity', 1.0); // 텍스트 불투명도 100%
       map.setPaintProperty('place-label', 'text-opacity', 1.0); // 텍스트 불투명도 100%
-      // 텍스트 크기 및 굵기 증가 (가능한 경우)
       map.setLayoutProperty('road-label', 'text-size', 14); // 기본 크기 증가
       map.setLayoutProperty('place-label', 'text-size', 14); // 기본 크기 증가
     });
@@ -96,7 +94,7 @@
     // ✅ 커스텀 마커 (내 사진)
     const el = document.createElement('div');
     el.style.backgroundImage = 'url("https://raw.githubusercontent.com/ljw2455qq/realtimeirl/main/profile.png")';
-    el.style.width = '25px';  // 마커 크기
+    el.style.width = '25px';
     el.style.height = '25px';
     el.style.backgroundSize = 'cover';
     el.style.borderRadius = '50%';
@@ -104,7 +102,6 @@
     el.style.boxShadow = '0 0 8px rgba(0,0,0,0.6)';
     el.style.opacity = '1.0'; // 마커 불투명도 100% 유지
 
-    // 마커 생성 (초기 서울 좌표)
     const marker = new mapboxgl.Marker(el)
       .setLngLat([126.9780, 37.5665])
       .addTo(map);
@@ -112,7 +109,7 @@
     // Haversine 공식으로 두 좌표 간 거리 계산 (미터 단위)
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3; // 지구 반경 (미터)
-      const φ1 = lat1 * Math.PI / 180; // 위도 to 라디안
+      const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
       const Δφ = (lat2 - lat1) * Math.PI / 180;
       const Δλ = (lon2 - lon1) * Math.PI / 180;
@@ -134,7 +131,7 @@
       if (password === ADMIN_PASSWORD) {
         document.getElementById('admin-panel').classList.add('active');
         document.getElementById('reset-button').disabled = false;
-        document.getElementById('admin-password').value = ''; // 입력값 지움
+        document.getElementById('admin-password').value = '';
       } else {
         alert('잘못된 비밀번호입니다.');
       }
@@ -153,18 +150,14 @@
       console.log("새 GPS 좌표:", location);
 
       if (location.latitude && location.longitude) {
-        // 마커 위치 업데이트
         marker.setLngLat([location.longitude, location.latitude]);
-
-        // 지도 중심 이동 (부드럽게)
         map.flyTo({
           center: [location.longitude, location.latitude],
           essential: true,
           speed: 0.8,
-          zoom: map.getZoom() // 현재 줌 유지
+          zoom: map.getZoom()
         });
 
-        // 이동 거리 계산
         if (previousLocation) {
           const distance = calculateDistance(
             previousLocation.latitude, previousLocation.longitude,
@@ -174,7 +167,6 @@
         }
         previousLocation = location;
 
-        // 오버레이 업데이트
         document.getElementById('distance-overlay').textContent = `총 이동 거리: ${totalDistance.toFixed(2)} km`;
       }
     });
