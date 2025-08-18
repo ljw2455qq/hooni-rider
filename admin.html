@@ -20,6 +20,9 @@
     <input id="monthly" placeholder="년 수익" type="text"><br>
     <button onclick="saveData()">저장</button>
 
+    <div id="map"></div>
+    <div id="distance-overlay">총 이동 거리: 0.00 km</div>
+
     <script>
         function saveData() {
             let daily = document.getElementById('daily').value;
@@ -36,6 +39,85 @@
                 console.error("저장 실패:", err);
             });
         }
+    </script>
+
+    <script>
+        const MAPBOX_TOKEN = "pk.eyJ1IjoiaG9vbmNvbSIsImEiOiJjbWNjM3R4enUwM3pnMmlxMWJvZTVrMWIzIn0.h_-BNK4FuriEfFWXvE1pmw";
+        const PULL_KEY = "zeoeyze9htbyx455"; // 본인 RealtimeIRL pull key
+
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        const map = new mapboxgl.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/streets-v12', 
+          center: [126.9780, 37.5665], 
+          zoom: 16 
+        });
+
+        map.addControl(new MapboxLanguage({ defaultLanguage: 'ko' }));
+
+        map.on('style.load', () => {
+          map.setPaintProperty('road-label', 'text-opacity', 1.0); 
+          map.setPaintProperty('place-label', 'text-opacity', 1.0); 
+          map.setLayoutProperty('road-label', 'text-size', 14); 
+          map.setLayoutProperty('place-label', 'text-size', 14); 
+        });
+
+        const el = document.createElement('div');
+        el.style.backgroundImage = 'url("https://raw.githubusercontent.com/ljw2455qq/realtimeirl/main/profile.png")';
+        el.style.width = '25px';  
+        el.style.height = '25px';
+        el.style.backgroundSize = 'cover';
+        el.style.borderRadius = '50%';
+        el.style.border = '2px solid white';
+        el.style.boxShadow = '0 0 8px rgba(0,0,0,0.6)';
+        el.style.opacity = '1.0'; 
+
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat([126.9780, 37.5665])
+          .addTo(map);
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+          const R = 6371e3; 
+          const φ1 = lat1 * Math.PI / 180; 
+          const φ2 = lat2 * Math.PI / 180;
+          const Δφ = (lat2 - lat1) * Math.PI / 180;
+          const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+          const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c; 
+        }
+
+        let totalDistance = 0;
+        let previousLocation = null;
+
+        RealtimeIRL.forPullKey(PULL_KEY).addLocationListener((location) => {
+          console.log("새 GPS 좌표:", location);
+
+          if (location.latitude && location.longitude) {
+            marker.setLngLat([location.longitude, location.latitude]);
+
+            map.flyTo({
+              center: [location.longitude, location.latitude],
+              essential: true,
+              speed: 0.8,
+              zoom: map.getZoom() 
+            });
+
+            if (previousLocation) {
+              const distance = calculateDistance(
+                previousLocation.latitude, previousLocation.longitude,
+                location.latitude, location.longitude
+              );
+              totalDistance += distance / 1000; 
+            }
+            previousLocation = location;
+
+            document.getElementById('distance-overlay').textContent = `총 이동 거리: ${totalDistance.toFixed(2)} km`;
+          }
+        });
     </script>
 </body>
 </html>
