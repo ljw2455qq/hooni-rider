@@ -1,111 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <title>GPS Overlay</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>OBS 오버레이</title>
 
-  <!-- Mapbox -->
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+<!-- Mapbox -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
 
-  <!-- Firebase -->
-  <script type="module">
-    // firebase.js 파일을 따로 두어도 되고, 여기 안에 직접 넣어도 됩니다.
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<!-- RealtimeIRL -->
+<script src="https://cdn.jsdelivr.net/npm/@rtirl/api"></script>
 
-    // 🔹 Firebase 설정 (사용자 프로젝트 값으로 교체)
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Mapbox 초기화
-    mapboxgl.accessToken = "YOUR_MAPBOX_ACCESS_TOKEN"; // 🔹 토큰 교체
-    const map = new mapboxgl.Map({
-      container: "map",
-      style: "mapbox://styles/mapbox/streets-v11", // 한국어 지원 스타일 권장
-      center: [127.0, 37.5], // 초기 위치 (한국 중부 근처)
-      zoom: 12
-    });
-
-    let marker;
-    let lastLat = null, lastLng = null;
-    let totalDistance = 0; // 주행거리 (km)
-
-    // Firebase GPS 데이터 실시간 수신
-    const gpsRef = ref(db, "gps/current");
-    onValue(gpsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) return;
-
-      const { lat, lng } = data;
-
-      // 마커 표시
-      if (!marker) {
-        marker = new mapboxgl.Marker({ color: "red" })
-          .setLngLat([lng, lat])
-          .addTo(map);
-        map.setCenter([lng, lat]);
-      } else {
-        marker.setLngLat([lng, lat]);
-      }
-
-      // 주행거리 계산 (Haversine 공식)
-      if (lastLat !== null && lastLng !== null) {
-        const dist = haversineDistance(lastLat, lastLng, lat, lng);
-        totalDistance += dist;
-        document.getElementById("distance").innerText =
-          `주행거리: ${totalDistance.toFixed(2)} km`;
-      }
-
-      lastLat = lat;
-      lastLng = lng;
-    });
-
-    // 거리 계산 함수 (위도, 경도)
-    function haversineDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371; // 지구 반지름 (km)
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: transparent; /* OBS에서 투명 배경 */
+        font-family: -apple-system, BlinkMacSystemFont,
+            "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
     }
-  </script>
-
-  <style>
-    body, html { margin: 0; padding: 0; height: 100%; background: transparent; }
-    #map { width: 100%; height: 100%; }
-
+    #map {
+        width: 100%;
+        height: 100vh; /* 전체 화면에 지도 */
+    }
     #overlay {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        font-size: 20px;
+        padding: 8px 16px;
+        border-radius: 10px;
     }
-  </style>
+</style>
 </head>
+
 <body>
-  <div id="map"></div>
-  <div id="overlay">
-    <span id="distance">주행거리: 0 km</span>
-  </div>
+<div id="map"></div>
+<div id="overlay">
+    <span id="distanceText">총 이동 거리: 0.00 km</span>
+</div>
+
+<script>
+    const MAPBOX_TOKEN = "YOUR_MAPBOX_ACCESS_TOKEN";  // 🔹 교체
+    const PULL_KEY = "YOUR_PULL_KEY";                 // 🔹 교체
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [126.9780, 37.5665], // 초기 좌표 (서울시청 근처)
+        zoom: 15
+    });
+
+    // 사용자 마커
+    const el = document.createElement('div');
+    el.style.backgroundImage = 'url("https://raw.githubusercontent.com/ljw2455qq/realtimeirl/main/profile.png")';
+    el.style.width = '30px';
+    el.style.height = '30px';
+    el.style.backgroundSize = 'cover';
+    el.style.borderRadius = '50%';
+    el.style.border = '2px solid white';
+    el.style.boxShadow = '0 0 6px rgba(0,0,0,0.6)';
+
+    const marker = new mapboxgl.Marker(el)
+        .setLngLat([126.9780, 37.5665])
+        .addTo(map);
+
+    // 거리 계산 함수 (Haversine 공식)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // m
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2 - lat1) * Math.PI/180;
+        const Δλ = (lon2 - lon1) * Math.PI/180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return R * c; // meters
+    }
+
+    let totalDistance = 0;
+    let prevLocation = null;
+
+    // RealtimeIRL로 GPS 위치 구독
+    RealtimeIRL.forPullKey(PULL_KEY).addLocationListener((location) => {
+        if (location.latitude && location.longitude) {
+            marker.setLngLat([location.longitude, location.latitude]);
+
+            map.flyTo({
+                center: [location.longitude, location.latitude],
+                essential: true,
+                speed: 0.8
+            });
+
+            if (prevLocation) {
+                const dist = calculateDistance(
+                    prevLocation.latitude, prevLocation.longitude,
+                    location.latitude, location.longitude
+                );
+                totalDistance += dist / 1000; // km 단위 변환
+            }
+            prevLocation = location;
+
+            document.getElementById("distanceText").textContent =
+                `총 이동 거리: ${totalDistance.toFixed(2)} km`;
+        }
+    });
+</script>
 </body>
 </html>
